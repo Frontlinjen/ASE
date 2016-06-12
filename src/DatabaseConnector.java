@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 
-public class Connector
+public class DatabaseConnector
 {
 	/**
 	 * To connect to a MySQL-server
@@ -37,7 +37,7 @@ public class Connector
 	private static Connection conn;
 	private static Statement stm;
 	
-	public Connector(String server, int port, String database,
+	public DatabaseConnector(String server, int port, String database,
 			String username, String password)
 				throws InstantiationException, IllegalAccessException,
 					ClassNotFoundException, SQLException
@@ -47,7 +47,7 @@ public class Connector
 		stm		= conn.createStatement();
 	}
 	
-	public Connector() throws InstantiationException, IllegalAccessException,
+	public DatabaseConnector() throws InstantiationException, IllegalAccessException,
 			ClassNotFoundException, SQLException
 	{
 		this(Constant.server, Constant.port, Constant.database,
@@ -60,7 +60,7 @@ public class Connector
 		{
 			if(conn==null)
 			{
-				new Connector();
+				new DatabaseConnector();
 			}
 		}
 		catch(Exception e)
@@ -77,7 +77,7 @@ public class Connector
 		{
 			if(conn==null)
 			{
-				new Connector();
+				new DatabaseConnector();
 			}
 		}
 		catch(Exception e)

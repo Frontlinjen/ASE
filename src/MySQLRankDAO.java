@@ -10,7 +10,7 @@ public class MySQLRankDAO implements RankDAO{
 
 	@Override
 	public RankDTO getRank(int titel) throws DALException {
-		ResultSet rs = Connector.doQuery("SELECT * FROM rank WHERE titel = " + titel + ";");
+		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM rank WHERE titel = " + titel + ";");
 		try {
 			if(!rs.first()) throw new DALException("Ranken med titel " + titel + " findes ikke");
 	    	return new RankDTO (rs.getInt("titel"), rs.getString("rank"));
@@ -21,7 +21,7 @@ public class MySQLRankDAO implements RankDAO{
 	@Override
 	public List<RankDTO> getRankList() throws DALException {
 		List<RankDTO> list = new ArrayList<RankDTO>();
-		ResultSet rs = Connector.doQuery("SELECT * FROM rank;");
+		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM rank;");
 		try
 		{
 			while (rs.next()) 

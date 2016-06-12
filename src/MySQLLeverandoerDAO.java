@@ -10,7 +10,7 @@ public class MySQLLeverandoerDAO implements LeverandoerDAO {
 
 	@Override
 	public LeverandoerDTO getLeverandoer(int leverandoerId) throws DALException {
-		ResultSet rs = Connector.doQuery("SELECT * FROM leverandoer WHERE leverandoer_id = " + leverandoerId + "';");
+		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM leverandoer WHERE leverandoer_id = " + leverandoerId + "';");
 		
 		try{
 			if(!rs.first()) 
@@ -25,7 +25,7 @@ public class MySQLLeverandoerDAO implements LeverandoerDAO {
 
 	@Override
 	public List<LeverandoerDTO> getLeverandoerList() throws DALException {
-		ResultSet rs = Connector.doQuery("SELECT * FROM leverandoer;");
+		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM leverandoer;");
 		return populateList(rs);
 	}
 	public List<LeverandoerDTO> populateList(ResultSet rs) throws DALException
@@ -50,13 +50,13 @@ public class MySQLLeverandoerDAO implements LeverandoerDAO {
 
 	@Override
 	public int createLeverandoer(LeverandoerDTO leverandoer) throws DALException {
-		return Connector.doUpdate(String.format("INSERT INTO leverandoer(leverandoer_id, leverandoer_navn) VALUES(" + leverandoer.getLeverandoerId() + ", '" +
+		return DatabaseConnector.doUpdate(String.format("INSERT INTO leverandoer(leverandoer_id, leverandoer_navn) VALUES(" + leverandoer.getLeverandoerId() + ", '" +
 		leverandoer.getLeverandoerNavn() + ");"));
 	}
 
 	@Override
 	public int updateLeverandoer(LeverandoerDTO leverandoer) throws DALException {
-		return Connector.doUpdate(String.format("UPDATE leverandoer SET leverandoer_navn = " + leverandoer.getLeverandoerNavn() +
+		return DatabaseConnector.doUpdate(String.format("UPDATE leverandoer SET leverandoer_navn = " + leverandoer.getLeverandoerNavn() +
 		"WHERE raavare_id = " + leverandoer.getLeverandoerId() + "';"));
 	}
 
