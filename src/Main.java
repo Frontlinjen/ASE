@@ -11,31 +11,31 @@ public class Main {
 		String input = null;
 		
 		while(true){
-			//Ask scale for id
+			//Ask ScaleWrapper for id
 			while(input == null){
-				input = scale.getInput();
+				input = ScaleWrapper.getInput();
 			}
 			try {
-				scale.PushDisplay("Hello " + database.getAnsat(input).getOprNavn() + ", please confirm (1: yes/2: no)");
+				ScaleWrapper.pushDisplay("Hello " + database.getAnsat(input).getOprNavn() + ", please confirm (1: yes/2: no)");
 				while(input == null){
-					input = scale.getInput();
+					input = ScaleWrapper.getInput();
 				}
-				if(auth == "1"){
+				if(input == "1"){
 					return;
 				}
-				else if(auth == "2"){
+				else if(input == "2"){
 					operatorIdentifier();
 				}
 				
 			} catch (DALException e) {
-				if(id.length() < 10){
-					scale.pushDisplay("Id too short");
+				if(input.length() < 10){
+					ScaleWrapper.pushDisplay("Id too short");
 				}
-				else if(id.length() > 10){
-					scale.pushDisplay("Id too long");
+				else if(input.length() > 10){
+					ScaleWrapper.pushDisplay("Id too long");
 				}
 				else{
-					scale.pushDisplay("User not found");
+					ScaleWrapper.pushDisplay("User not found");
 				}
 			}
 		}
@@ -45,59 +45,63 @@ public class Main {
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		MySQLReceptDAO rcDAO = new MySQLReceptDAO();
 		String input = null;
-		scale.pushDisplay("Please state the product batch number:");
+		int produktBatchNr;
+		ScaleWrapper.pushDisplay("Please state the product batch number:");
 		while(input == null){
-			input = scale.getInput();
+			input = ScaleWrapper.getInput();
 		}
+		produktBatchNr = Integer.parseInt(input);
 		try{
-		scale.pushDisplay(rcDAO.getRecept(pbDAO.getProduktBatch(Integer.parseInt(input)).getReceptId()).getReceptNavn() + ", please confirm the recipe (1: yes/2: no)");
+		ScaleWrapper.pushDisplay(rcDAO.getRecept(pbDAO.getProduktBatch(produktBatchNr).getReceptId()).getReceptNavn() + ", please confirm the recipe (1: yes/2: no)");
 		while(input == null){
-			input = scale.getInput();
+			input = ScaleWrapper.getInput();
 		}
-		if(auth == "1"){
-			afvejningCore();
+		if(input == "1"){
+			afvejningCore(produktBatchNr);
 		}
-		else if(auth == "2"){
+		else if(input == "2"){
 			afvejning();
 		}
 		}
 		catch(DALException e){
-			scale.pushDisplay("Failed to find recipe, please check product batch number");
+			ScaleWrapper.pushDisplay("Failed to find recipe, please check product batch number");
 			afvejning();
 			//Annuller mulighed?
 		}
 	}
 	
-	private void afvejningCore(){
+	private void afvejningCore(int produktBatch){
 		MySQLProduktBatchKompDAO pbkDAO = new MySQLProduktBatchKompDAO();
+		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		String input = null;
 		try{
-			for(int i = 0; i < pbkDAO.getSpecifiedProduktBatchKompList(input).size()/*Lav en SpecifiedProduktBatchKomponentList(String); i DAO*/; i++){
-				scale.pushDisplay("Please confirm that the scale is clear, press 1 to confirm");
+			for(int i = 0; i < pbkDAO.getSpecifiedProduktBatchKompList(Integer.parseInt(input)).size()/*Lav en SpecifiedProduktBatchKomponentList(String); i DAO*/; i++){
+				ScaleWrapper.pushDisplay("Please confirm that the ScaleWrapper is clear, press 1 to confirm");
 				while(input != "1"){
-					scale.getInput();
+					ScaleWrapper.getInput();
 				}
-				pbDAO.setStatus(input, "Under Produktion"); //Lav pbDAO.setStatus(int, String); i DAO 
-				scale.pushDisplay("AutoTara"); //Yes?
-				scale.tara();
-				scale.pushDisplay("Please place container on the scale and press 1 when ready");
+				pbDAO.getProduktBatch(produktBatch).setStatus(1);
+				ScaleWrapper.pushDisplay("AutoTara"); //Yes?
+				ScaleWrapper.tara();
+				ScaleWrapper.pushDisplay("Please place container on the ScaleWrapper and press 1 when ready");
 				while(input != "1"){
-					scale.getInput();
+					ScaleWrapper.getInput();
 				}
-				double containerWeight = scale.getWeight();
-				scale.pushDisplay("AutoTara"); //Yes?
-				scale.tara();
-				scale.pushDisplay("Please weigh component with resourcebatch id = " + pbkDAO.getProduktBatchKompList().get(i).getRaavarebatchId() + " in the container and press 1 when ready");
+				double containerWeight = ScaleWrapper.getWeight();
+				ScaleWrapper.pushDisplay("AutoTara"); //Yes?
+				ScaleWrapper.tara();
+				ScaleWrapper.pushDisplay("Please weigh component with resourcebatch id = " + pbkDAO.getProduktBatchKompList().get(i).getRaavarebatchId() + " in the container and press 1 when ready");
 				while(input != "1"){
-					scale.getInput();
+					ScaleWrapper.getInput();
 				}
 				pbkDAO.getProduktBatchKompList().get(i).setTara(containerWeight);
-				pbkDAO.getProduktBatchKompList().get(i).setNetto(scale.getWeight()-containerWeight);
+				pbkDAO.getProduktBatchKompList().get(i).setNetto(ScaleWrapper.getWeight()-containerWeight);
 			}
-			pbkDAO.setStatus("Afsluttet");
+			pbDAO.getProduktBatch(produktBatch).setStatus(2);
 		}
 		catch(DALException e){
-			scale.PushDisplay("Error happened, trying again...");
-			afvejningCore();
+			ScaleWrapper.pushDisplay("Error happened, trying again...");
+			afvejningCore(produktBatch);
+		}
 	}
 }
