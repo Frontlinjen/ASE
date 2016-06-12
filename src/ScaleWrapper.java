@@ -1,20 +1,27 @@
 
 public class ScaleWrapper {
 
-	public String getInput() {
-		return "D";
+	public String waitForInput(String ask, String expected) {
+		String send = "RM20 8 \"" + ask + "\" \"\" \"" + expected + "\" crlf";
+		return null; //return response
 	}
 
-	public void pushDisplay(String string) {
-		
+	public void pushDisplay(String message) {
+		CommandParser parser = new CommandParser("D \"" + message + "\" crlf");
 	}
 
-	public void tara() {
-		
+	public double tara() {
+		CommandParser parser = new CommandParser("T crlf"); //Skal returnere tara-værdien?
+		return null; //return tara response
 	}
 
+	public void clearDisplay(){
+		CommandParser parser = new CommandParser("DW crlf");
+	}
+	
 	public double getWeight() {
-		return 0;
+		CommandParser parser = new CommandParser("S crlf");
+		return null; //return the weight
 	}
 
 }
