@@ -109,6 +109,7 @@ public class Runner implements Runnable{
 		try {
 			if(pbDAO.getProduktBatch(produktBatch).getStatus() == 1){
 				scale.pushLongDisplay("Productbatch in progress");
+				return;
 			}
 		} catch (DALException e1) {
 			// TODO Auto-generated catch block
