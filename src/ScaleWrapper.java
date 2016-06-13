@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -12,43 +13,56 @@ public class ScaleWrapper {
 	PrintWriter logger;
 	public ScaleWrapper(Socket con) throws IOException
 	{
-		logger = new PrintWriter(Thread.currentThread().getName() + " " + con.getInetAddress().getHostAddress() + ".txt");
+		logger = new PrintWriter(System.out);
 		this.con = con;
 		out = new PrintWriter(con.getOutputStream());
 		in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		String identifier = in.readLine();
+		System.out.println(identifier);
+		pushShortDisplay("Welcome");
 	}
 	public void sendString(String s, String... args)
 	{
 		String command = String.format(s,  args) + "\r\n";
-		logger.write("Sending command: " + command);
+		logger.write("Sending command: " + command + "\n");
+		logger.flush();
 		out.write(command);
+		out.flush();
 	}
-	
-	public String waitForInput(String ask, String display, String unit) {
-		sendString("RM20 8 \"%s\" \"%s\" \"%s\"", ask, display, unit);
+	//MAX 24 CHARACTERS
+	public String waitForInput(String ask, int type, String display, String unit) {
+		display = display == null ? "" : display;
+		unit = unit == null ? "" : unit;
+		sendString("RM20 %s \"%s\" \"%s\" \"%s\"", Integer.toString(type), ask, display, unit);
 		try {
-			switch(in.readLine())
+			String result = in.readLine();
+			System.out.println(result);
+			switch(result)
 			{
 				case "RM20 B":
 				{
-					logger.write("Waiting for input from weight.");
+					logger.write("Waiting for input from weight.\n");
 					break;
 				}
 				case "RM20 I":
 				{
-					logger.write("Got RM20 I. Are there two connections to the same weight? Aborting...");
+					logger.write("Got RM20 I. Are there two connections to the same weight? Aborting...\n");
 					return null;
 				}
 				case "RM20 L":
 				{
-					logger.write("Wrong arguments");
+					logger.write("Wrong arguments\n");
 					return null;
+				}
+				default:{
+					logger.write("Other error: " + result + "\n");
 				}
 			}
 			String[] response = new CommandParser(in.readLine()).getTokens();
-			if(response[0] == "RM20")
+			System.out.println(String.join(",", response));
+			if(response[0].equals("RM20"))
 			{
-				if(response[1] == "A")
+				if(response[1].equals("A"))
 				{
 					return response[2];
 				}
@@ -65,27 +79,30 @@ public class ScaleWrapper {
 		return null;
 	}
 
-	public void pushDisplay(String message) {
+	public void pushShortDisplay(String message) { //MAX 6/7 CHARACTERS
 		sendString("D \"%s\"", message);
 		try {
 			switch(in.readLine())
 			{
 				case "D A":
 				{
-					logger.write("Successfully displayed message");
+					logger.write("Successfully displayed message\n");
 					break;
 				}
 				case "D I":
 				{
-					logger.write("Command not executable");
+					logger.write("Command not executable\n");
 				}
 				case "D L":
 				{
-					logger.write("Wrong parametre");
+					logger.write("Wrong parametre\n");
+				}
+				default:{
+					logger.write("Other error\n");
 				}
 			}
 		} catch (IOException e) {
-			logger.write("Failed to write to socket" + e.getMessage());
+			logger.write("Failed to write to socket" + e.getMessage() + "\n");
 		}
 	}
 
@@ -95,24 +112,27 @@ public class ScaleWrapper {
 			String[] tokens = new CommandParser(in.readLine()).getTokens();
 			switch(tokens[1]){
 			case "S":{
-				logger.write("Tared successfully, tare value:" + tokens[2] + tokens[3]);
+				logger.write("Tared successfully, tare value:" + tokens[2] + tokens[3] + "\n");
 				return Double.parseDouble(tokens[2]);
 			}
 			case "I":{
-				logger.write("Tare not executed, trying again");
+				logger.write("Tare not executed, trying again\n");
 				Thread.sleep(2000);
 				return tara();
 			}
 			case "+":{
-				logger.write("Upper tare limit exceeded");
+				logger.write("Upper tare limit exceeded\n");
 			}
 			case "-":{
-				logger.write("Lower tare limit exceeded");
+				logger.write("Lower tare limit exceeded\n");
+			}
+			default:{
+				logger.write("Other error\n");
 			}
 			}
 		}
 		catch(IOException e){
-			logger.write("Failed to write to socket" + e.getMessage());
+			logger.write("Failed to write to socket" + e.getMessage() + "\n");
 		} catch (InterruptedException e) {
 			e.printStackTrace(logger);
 		}
@@ -125,14 +145,17 @@ public class ScaleWrapper {
 			switch(in.readLine())
 			{
 				case "DW A":{
-					logger.write("Displaying weight mode");
+					logger.write("Displaying weight mode\n");
 				}
 				case "DW I":{
-					logger.write("Unable to execute");
+					logger.write("Unable to execute\n");
+				}
+				default:{
+					logger.write("Other error\n");
 				}
 			}
 		} catch (IOException e) {
-			logger.write("Failed to write to socket" + e.getMessage());
+			logger.write("Failed to write to socket" + e.getMessage() + "\n");
 		}
 	}
 	
@@ -142,28 +165,57 @@ public class ScaleWrapper {
 			String[] tokens = new CommandParser(in.readLine()).getTokens();
 			switch(tokens[1]){
 			case "S":{
-				logger.write("Weighing successful, weight:" + tokens[2] + tokens[3]);
+				logger.write("Weighing successful, weight:" + tokens[2] + tokens[3] + "\n");
 				return Double.parseDouble(tokens[2]);
 			}
 			case "I":{
-				logger.write("Weighing not executed, trying again");
+				logger.write("Weighing not executed, trying again\n");
 				Thread.sleep(2000);
 				return getWeight();
 			}
 			case "+":{
-				logger.write("Upper weight limit exceeded");
+				logger.write("Upper weight limit exceeded\n");
 			}
 			case "-":{
-				logger.write("Lower weight limit exceeded");
+				logger.write("Lower weight limit exceeded\n");
+			}
+			default:{
+				logger.write("Other error\n");
 			}
 			}
 		}
 		catch(IOException e){
-			logger.write("Failed to write to socket" + e.getMessage());
+			logger.write("Failed to write to socket" + e.getMessage() + "\n");
 		} catch (InterruptedException e) {
 			e.printStackTrace(logger);
 		}
 		return Double.NaN; //return the weight
 	}
-
+	
+	public void pushLongDisplay(String message) {
+		sendString("P111 \"%s\"", message);
+		try {
+			switch(in.readLine())
+			{
+				case "P111 A":
+				{
+					logger.write("Successfully displayed message\n");
+					break;
+				}
+				case "P111 I":
+				{
+					logger.write("Command not executable\n");
+				}
+				case "P111 L":
+				{
+					logger.write("Wrong parametre\n");
+				}
+				default:{
+					logger.write("Other error\n");
+				}
+			}
+		} catch (IOException e) {
+			logger.write("Failed to write to socket" + e.getMessage() + "\n");
+		}
+	}
 }

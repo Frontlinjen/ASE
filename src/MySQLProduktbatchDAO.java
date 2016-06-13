@@ -52,5 +52,20 @@ public class MySQLProduktbatchDAO implements ProduktBatchDAO {
 				);
 		
 	}
+	
+	public List<ReceptKompDTO> getRaavareList(int pbId) throws DALException {
+		List<ReceptKompDTO> list = new ArrayList<ReceptKompDTO>();
+		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM receptkomponent WHERE WHERE receptkomponen.recept_id = (SELECT produktbatch.recept_id from produktbatch where produktbatch.pb_id = "+ pbId + ");");
+		try
+		{
+			while (rs.next()) 
+			{
+				list.add(new ReceptKompDTO(rs.getInt("recept_id"), rs.getInt("raavare_id"), 
+						 rs.getInt("nom_netto"), rs.getDouble("tolerance")));
+			}
+		}
+		catch (SQLException e) { throw new DALException(e); }
+		return list;
+	}
 
 }

@@ -1,16 +1,20 @@
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class Runner implements Runnable{
 
 	private ScaleWrapper scale;
 	private String ipAddress;
 	private Socket socket;
+	private String cpr;
+	private int pbId;
 	@Override
 	public void run() {
 		connectToScale();
 		operatorIdentifier();
+		System.out.println("Starting afvejning");
 		afvejning();
 	}
 	
@@ -36,6 +40,12 @@ public class Runner implements Runnable{
 				System.out.println("Failed to create socket: " + e.getMessage());
 			}
 		}while(socket==null);
+		try {
+			scale = new ScaleWrapper(socket);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	private void operatorIdentifier(){ //punkt 1-4
@@ -43,31 +53,11 @@ public class Runner implements Runnable{
 		MySQLAnsatDAO database = new MySQLAnsatDAO();
 		
 		while(true){
-			//Ask ScaleWrapper for id
-			String id = scale.waitForInput("Please insert your Operator ID:", null, null);
-			try {
-				scale.pushDisplay("Hello " + database.getAnsat(id).getOprNavn() + ", please confirm (1: yes/2: no)");
-				String input = scale.waitForInput("Please confirm (Ok/Cancel)", "Ok", null);
-				if(input == "Ok"){
-					return;
-				}
-				else if(input == "Cancel"){
-					operatorIdentifier();
-				}
-				
-			} catch (DALException e) {
-				if(id == null){
-					scale.pushDisplay("Error when getting ID from scale");
-				}
-				else if(id.length() < 10){
-					scale.pushDisplay("Id too short");
-				}
-				else if(id.length() > 10){
-					scale.pushDisplay("Id too long");
-				}
-				else{
-					scale.pushDisplay("User not found");
-				}
+			cpr = scale.waitForInput("Insert operator ID:", 8, null, null);
+			System.out.println(cpr);
+			String input = scale.waitForInput("Confirm " + cpr, 8, "Ok", null);
+			if(input!=null){
+				return;
 			}
 		}
 	}
@@ -84,21 +74,20 @@ public class Runner implements Runnable{
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		MySQLReceptDAO rcDAO = new MySQLReceptDAO();
 		String input = null;
-		int produktBatchNr;
 		
-		scale.waitForInput("Please state the product batch number:", null, null);
-		produktBatchNr = Integer.parseInt(scale.waitForInput("Please state the product batch number:", null, null));
+		pbId = Integer.parseInt(scale.waitForInput("Product batch number:", 8, null, null));
 		try{
-		input = scale.waitForInput(rcDAO.getRecept(pbDAO.getProduktBatch(produktBatchNr).getReceptId()).getReceptNavn() + ", please confirm the recipe (Ok/Cancel)", "Ok", null);
+			scale.pushLongDisplay(rcDAO.getRecept(pbDAO.getProduktBatch(pbId).getReceptId()).getReceptNavn());
+		input = scale.waitForInput("Please confirm", 8, "Ok", null);
 		if(input == "Ok"){
-			afvejningCore(produktBatchNr);
+			afvejningCore(pbId);
 		}
 		else if(input == "Cancel"){
 			afvejning();
 		}
 		}
 		catch(DALException e){
-			scale.pushDisplay("Failed to find recipe, please check product batch number");
+			scale.pushLongDisplay("Failed to find recipe");
 			afvejning();
 			//Annuller mulighed?
 		}
@@ -116,38 +105,48 @@ public class Runner implements Runnable{
 		MySQLProduktBatchKompDAO pbkDAO = new MySQLProduktBatchKompDAO();
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		String input = null;
+		
+		try {
+			if(pbDAO.getProduktBatch(produktBatch).getStatus() == 1){
+				scale.pushLongDisplay("Productbatch in progress");
+			}
+		} catch (DALException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		try{
-			for(int i = 0; i < pbkDAO.getSpecifiedProduktBatchKompList(Integer.parseInt(input)).size()/*Lav en SpecifiedProduktBatchKomponentList(String); i DAO*/; i++){
-				input = scale.waitForInput("Please confirm that the scale is clear (Ok/Cancel)", "Ok", null);
+			List<ReceptKompDTO> list = pbDAO.getRaavareList(Integer.parseInt(input));
+			for(int i = 0; i < list.size(); i++){
+				ProduktBatchKompDTO pbk = new ProduktBatchKompDTO();
+				input = scale.waitForInput("Clear scale", 8, "Ok", null);
 				if(input == "Ok"){
 				}
 				else if(input == "Cancel"){
 					//What do?
 				}
 				pbDAO.getProduktBatch(produktBatch).setStatus(1);
-				scale.pushDisplay("AutoTara commencing, please retreat to a safe distance"); //Yes?
+				scale.pushLongDisplay("AutoTara commencing"); //Yes?
+				scale.tara();
+				input = scale.waitForInput("Place container on scale", 8, "Ok", null);
+				if(input == "Ok"){
+				}
+				else if(input == "Cancel"){
+					//What do?
+				}
+				scale.pushLongDisplay("AutoTara commencing"); //Yes?
 				double taraval = scale.tara();
-				input = scale.waitForInput("Please place container on the scale and press Ok when ready (Ok/Cancel)", "Ok", null);
-				if(input == "Ok"){
-				}
-				else if(input == "Cancel"){
-					//What do?
-				}
-				scale.pushDisplay("AutoTara commencing, please retreat to a safe distance"); //Yes?
-				taraval += scale.tara();
-				input = scale.waitForInput("Please weigh component with resourcebatch id = " + pbkDAO.getProduktBatchKompList().get(i).getRaavarebatchId() + " in the container and press Ok when ready (Ok/Cancel)", "Ok", null);
-				if(input == "Ok"){
-				}
-				else if(input == "Cancel"){
-					//What do?
-				}
-				pbkDAO.getProduktBatchKompList().get(i).setTara(scale.tara() + taraval);
-				pbkDAO.getProduktBatchKompList().get(i).setNetto(scale.getWeight());
+				input = scale.waitForInput("Resource batch Number:", 8, null, null);
+				pbk.setRaavarebatchId(Integer.parseInt(input));
+				pbk.setTara(scale.tara() + taraval);
+				pbk.setNetto(scale.getWeight());
+				pbk.setCpr(cpr);
+				pbk.setPbId(pbId);
 			}
 			pbDAO.getProduktBatch(produktBatch).setStatus(2);
 		}
 		catch(DALException e){
-			scale.pushDisplay("Error happened, trying again...");
+			scale.pushLongDisplay("Error happened, trying again");
 			afvejningCore(produktBatch);
 		}
 	}

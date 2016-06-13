@@ -8,6 +8,5 @@ public interface ProduktBatchKompDAO {
 	List<ProduktBatchKompDTO> getProduktBatchKompList() throws DALException;
 	int createProduktBatchKomp(ProduktBatchKompDTO produktbatchkomponent) throws DALException;
 	int updateProduktBatchKomp(ProduktBatchKompDTO produktbatchkomponent) throws DALException;
-	List<ProduktBatchKompDTO> getSpecifiedProduktBatchKompList(int pbId) throws DALException;	
-}
+	}
 

@@ -34,22 +34,6 @@ public class MySQLProduktBatchKompDAO implements ProduktBatchKompDAO {
 		catch (SQLException e) { throw new DALException(e); }
 		return list;
 	}
-	
-	@Override
-	public List<ProduktBatchKompDTO> getSpecifiedProduktBatchKompList(int pbId) throws DALException {
-		List<ProduktBatchKompDTO> list = new ArrayList<ProduktBatchKompDTO>();
-		ResultSet rs = DatabaseConnector.doQuery("SELECT * FROM produktbatchkomponent WHERE pbId = " + pbId + ";");
-		try
-		{
-			while (rs.next()) 
-			{
-				list.add(new ProduktBatchKompDTO(rs.getInt("pb_id"), rs.getInt("raavarebatch_id"), 
-						 rs.getDouble("tara"), rs.getDouble("netto"), rs.getString("cpr")));
-			}
-		}
-		catch (SQLException e) { throw new DALException(e); }
-		return list;
-	}
 
 	@Override
 	public int createProduktBatchKomp(ProduktBatchKompDTO pbkomp) throws DALException {
