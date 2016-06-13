@@ -46,7 +46,7 @@ public class ScaleWrapper {
 				}
 				case "RM20 I":
 				{
-					logger.write("Got RM20 I. Are there two connections to the same weight? Aborting...\n");
+					logger.write("Got RM20 I. Scale busy\n");
 					return null;
 				}
 				case "RM20 L":
