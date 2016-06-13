@@ -1,14 +1,45 @@
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class Runner implements Runnable{
 
+	private ScaleWrapper scale;
+	private String ipAddress;
+	private Socket socket;
 	@Override
 	public void run() {
+		connectToScale();
 		operatorIdentifier();
 		afvejning();
 	}
 	
+	public Runner(String ipAddress)
+	{
+		this.ipAddress = ipAddress;
+	}
+	private void connectToScale()
+	{
+		do
+		{
+			try {
+				socket = new Socket(ipAddress, 8000);
+			} catch(UnknownHostException e) //Address was not found
+			{
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e1) {
+					System.out.println("Timed out too early.");
+				}
+			}catch (IOException e) 
+			{
+				System.out.println("Failed to create socket: " + e.getMessage());
+			}
+		}while(socket==null);
+		
+	}
 	private void operatorIdentifier(){ //punkt 1-4
-		ScaleWrapper scale = new ScaleWrapper();
+		
 		MySQLAnsatDAO database = new MySQLAnsatDAO();
 		String input = null;
 		
