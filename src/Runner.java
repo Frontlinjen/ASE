@@ -79,10 +79,10 @@ public class Runner implements Runnable{
 		try{
 			scale.pushLongDisplay(rcDAO.getRecept(pbDAO.getProduktBatch(pbId).getReceptId()).getReceptNavn());
 		input = scale.waitForInput("Please confirm", 8, "Ok", null);
-		if(input == "Ok"){
+		if(input != null){
 			afvejningCore(pbId);
 		}
-		else if(input == "Cancel"){
+		else{
 			afvejning();
 		}
 		}
