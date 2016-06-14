@@ -9,6 +9,7 @@ public class Runner implements Runnable{
 	private String ipAddress;
 	private Socket socket;
 	private String cpr;
+	private AnsatDTO user;
 	private int pbId;
 	@Override
 	public void run() {
@@ -55,7 +56,24 @@ public class Runner implements Runnable{
 		while(true){
 			cpr = scale.waitForInput("Insert operator ID:", 8, null, null);
 			System.out.println(cpr);
-			String input = scale.waitForInput("Confirm " + cpr, 8, "Ok", null);
+			String input;
+			try {
+				user = database.getAnsat(cpr);
+				if(user==null)
+				{
+					scale.pushLongDisplay("User not found.");
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						//We need to ask again regardless. 
+					}
+					continue;
+				}
+			} catch (DALException e1) {
+				scale.pushLongDisplay("Failed to connect to database");
+			}
+			
+			input = scale.waitForInput(user.getOprNavn() + "?", 8, "Ok", null);
 			if(input!=null){
 				return;
 			}
@@ -65,7 +83,7 @@ public class Runner implements Runnable{
 	private void afvejning(){ //punkt 5-16
 		ScaleWrapper scale;
 		try {
-			scale = new ScaleWrapper(socket);
+			scale = new ScaleWrapper(socket); //Ny socket problem?
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -89,16 +107,14 @@ public class Runner implements Runnable{
 		catch(DALException e){
 			scale.pushLongDisplay("Failed to find recipe");
 			afvejning();
-			//Annuller mulighed?
 		}
 	}
 	
 	private void afvejningCore(int produktBatch){
 		ScaleWrapper scale;
 		try {
-			scale = new ScaleWrapper(socket);
+			scale = new ScaleWrapper(socket); //Ny socket problem?
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			return;
 		}
@@ -112,7 +128,6 @@ public class Runner implements Runnable{
 				return;
 			}
 		} catch (DALException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
@@ -120,20 +135,32 @@ public class Runner implements Runnable{
 			List<ReceptKompDTO> list = pbDAO.getRaavareList(Integer.parseInt(input));
 			for(int i = 0; i < list.size(); i++){
 				ProduktBatchKompDTO pbk = new ProduktBatchKompDTO();
-				input = scale.waitForInput("Clear scale", 8, "Ok", null);
-				if(input == "Ok"){
-				}
-				else if(input == "Cancel"){
-					//What do?
+				while(true){
+					input = scale.waitForInput("Clear scale", 8, "Ok", null);
+					if(input == "Ok"){
+						break;
+					}
+					else{
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+						}
+					}
 				}
 				pbDAO.getProduktBatch(produktBatch).setStatus(1);
 				scale.pushLongDisplay("AutoTara commencing"); //Yes?
 				scale.tara();
-				input = scale.waitForInput("Place container on scale", 8, "Ok", null);
-				if(input == "Ok"){
-				}
-				else if(input == "Cancel"){
-					//What do?
+				while(true){
+					input = scale.waitForInput("Place container on scale", 8, "Ok", null);
+					if(input == "Ok"){
+						break;
+					}
+					else{
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+						}
+					}
 				}
 				scale.pushLongDisplay("AutoTara commencing"); //Yes?
 				double taraval = scale.tara();
