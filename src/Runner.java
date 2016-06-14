@@ -50,7 +50,6 @@ public class Runner implements Runnable{
 		
 	}
 	private void operatorIdentifier(){ //punkt 1-4
-		
 		MySQLAnsatDAO database = new MySQLAnsatDAO();
 		
 		while(true){
@@ -81,14 +80,7 @@ public class Runner implements Runnable{
 	}
 	
 	private void afvejning(){ //punkt 5-16
-		ScaleWrapper scale;
-		try {
-			scale = new ScaleWrapper(socket); //Ny socket problem?
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
-		}
+
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		MySQLReceptDAO rcDAO = new MySQLReceptDAO();
 		String input = null;
@@ -111,13 +103,6 @@ public class Runner implements Runnable{
 	}
 	
 	private void afvejningCore(int produktBatch){
-		ScaleWrapper scale;
-		try {
-			scale = new ScaleWrapper(socket); //Ny socket problem?
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			return;
-		}
 		MySQLProduktBatchKompDAO pbkDAO = new MySQLProduktBatchKompDAO();
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		String input = null;
@@ -170,8 +155,10 @@ public class Runner implements Runnable{
 				pbk.setNetto(scale.getWeight());
 				pbk.setCpr(cpr);
 				pbk.setPbId(pbId);
+				pbkDAO.addProduktBatchKomp(pbk);
 			}
 			pbDAO.getProduktBatch(produktBatch).setStatus(2);
+			run(); //Ryk frem til start!
 		}
 		catch(DALException e){
 			scale.pushLongDisplay("Error happened, trying again");
