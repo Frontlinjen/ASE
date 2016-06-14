@@ -44,7 +44,6 @@ public class Runner implements Runnable{
 		try {
 			scale = new ScaleWrapper(socket);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -61,11 +60,6 @@ public class Runner implements Runnable{
 				if(user==null)
 				{
 					scale.pushLongDisplay("User not found.");
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {
-						//We need to ask again regardless. 
-					}
 					continue;
 				}
 			} catch (DALException e1) {
@@ -133,7 +127,7 @@ public class Runner implements Runnable{
 					}
 				}
 				pbDAO.getProduktBatch(produktBatch).setStatus(1);
-				scale.pushLongDisplay("AutoTara commencing"); //Yes?
+				scale.pushLongDisplay("AutoTara commencing");
 				scale.tara();
 				while(true){
 					input = scale.waitForInput("Place container on scale", 8, "Ok", null);
@@ -147,7 +141,7 @@ public class Runner implements Runnable{
 						}
 					}
 				}
-				scale.pushLongDisplay("AutoTara commencing"); //Yes?
+				scale.pushLongDisplay("AutoTara commencing");
 				double taraval = scale.tara();
 				input = scale.waitForInput("Resource batch Number:", 8, null, null);
 				pbk.setRaavarebatchId(Integer.parseInt(input));

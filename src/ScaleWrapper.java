@@ -104,6 +104,10 @@ public class ScaleWrapper {
 		} catch (IOException e) {
 			logger.write("Failed to write to socket" + e.getMessage() + "\n");
 		}
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+		}
 	}
 
 	public double tara() {
@@ -216,6 +220,10 @@ public class ScaleWrapper {
 			}
 		} catch (IOException e) {
 			logger.write("Failed to write to socket" + e.getMessage() + "\n");
+		}
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
 		}
 	}
 }
