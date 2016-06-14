@@ -9,6 +9,7 @@ public class Runner implements Runnable{
 	private String ipAddress;
 	private Socket socket;
 	private String cpr;
+	private AnsatDTO user;
 	private int pbId;
 	@Override
 	public void run() {
@@ -43,19 +44,29 @@ public class Runner implements Runnable{
 		try {
 			scale = new ScaleWrapper(socket);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 	}
 	private void operatorIdentifier(){ //punkt 1-4
-		
 		MySQLAnsatDAO database = new MySQLAnsatDAO();
 		
 		while(true){
 			cpr = scale.waitForInput("Insert operator ID:", 8, null, null);
 			System.out.println(cpr);
-			String input = scale.waitForInput("Confirm " + cpr, 8, "Ok", null);
+			String input;
+			try {
+				user = database.getAnsat(cpr);
+				if(user==null)
+				{
+					scale.pushLongDisplay("User not found.");
+					continue;
+				}
+			} catch (DALException e1) {
+				scale.pushLongDisplay("Failed to connect to database");
+			}
+			
+			input = scale.waitForInput(user.getOprNavn() + "?", 8, "Ok", null);
 			if(input!=null){
 				return;
 			}
@@ -63,14 +74,7 @@ public class Runner implements Runnable{
 	}
 	
 	private void afvejning(){ //punkt 5-16
-		ScaleWrapper scale;
-		try {
-			scale = new ScaleWrapper(socket);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
-		}
+
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		MySQLReceptDAO rcDAO = new MySQLReceptDAO();
 		String input = null;
@@ -89,19 +93,10 @@ public class Runner implements Runnable{
 		catch(DALException e){
 			scale.pushLongDisplay("Failed to find recipe");
 			afvejning();
-			//Annuller mulighed?
 		}
 	}
 	
 	private void afvejningCore(int produktBatch){
-		ScaleWrapper scale;
-		try {
-			scale = new ScaleWrapper(socket);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
-		}
 		MySQLProduktBatchKompDAO pbkDAO = new MySQLProduktBatchKompDAO();
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		String input = null;
@@ -112,7 +107,6 @@ public class Runner implements Runnable{
 				return;
 			}
 		} catch (DALException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		
@@ -120,22 +114,34 @@ public class Runner implements Runnable{
 			List<ReceptKompDTO> list = pbDAO.getRaavareList(Integer.parseInt(input));
 			for(int i = 0; i < list.size(); i++){
 				ProduktBatchKompDTO pbk = new ProduktBatchKompDTO();
-				input = scale.waitForInput("Clear scale", 8, "Ok", null);
-				if(input == "Ok"){
-				}
-				else if(input == "Cancel"){
-					//What do?
+				while(true){
+					input = scale.waitForInput("Clear scale", 8, "Ok", null);
+					if(input == "Ok"){
+						break;
+					}
+					else{
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+						}
+					}
 				}
 				pbDAO.getProduktBatch(produktBatch).setStatus(1);
-				scale.pushLongDisplay("AutoTara commencing"); //Yes?
+				scale.pushLongDisplay("AutoTara commencing");
 				scale.tara();
-				input = scale.waitForInput("Place container on scale", 8, "Ok", null);
-				if(input == "Ok"){
+				while(true){
+					input = scale.waitForInput("Place container on scale", 8, "Ok", null);
+					if(input == "Ok"){
+						break;
+					}
+					else{
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+						}
+					}
 				}
-				else if(input == "Cancel"){
-					//What do?
-				}
-				scale.pushLongDisplay("AutoTara commencing"); //Yes?
+				scale.pushLongDisplay("AutoTara commencing");
 				double taraval = scale.tara();
 				input = scale.waitForInput("Resource batch Number:", 8, null, null);
 				pbk.setRaavarebatchId(Integer.parseInt(input));
@@ -143,8 +149,10 @@ public class Runner implements Runnable{
 				pbk.setNetto(scale.getWeight());
 				pbk.setCpr(cpr);
 				pbk.setPbId(pbId);
+				pbkDAO.addProduktBatchKomp(pbk);
 			}
 			pbDAO.getProduktBatch(produktBatch).setStatus(2);
+			run(); //Ryk frem til start!
 		}
 		catch(DALException e){
 			scale.pushLongDisplay("Error happened, trying again");
