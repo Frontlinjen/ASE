@@ -6,7 +6,15 @@ public class CommandParser {
 	private int p = 0;
 	public CommandParser(String s)
 	{
-		command = s;
+		StringBuilder trimmedStr = new StringBuilder();
+		for (int i =1; i < s.length(); i++) {
+			if(!(Character.isWhitespace(s.charAt(i)) && Character.isWhitespace(s.charAt(i-1))))
+			{
+				
+				trimmedStr.append(s.charAt(i));
+			}
+		}
+		command = trimmedStr.toString();
 	}
 	//Todo: make it take double spaces into account
 	public String nextToken()
@@ -63,4 +71,5 @@ public class CommandParser {
 		}
 		return (String[])tokens.toArray(new String[tokens.size()]);
 	}
+
 }
