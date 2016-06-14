@@ -6,6 +6,7 @@ public class CommandParser {
 	private int p = 0;
 	public CommandParser(String s)
 	{
+		System.out.println("Creating parser with: " +s);
 		command = s;
 	}
 	//Todo: make it take double spaces into account

@@ -19,7 +19,7 @@ public class ScaleWrapper {
 		in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String identifier = in.readLine();
 		System.out.println(identifier);
-		pushShortDisplay("Welcome");
+		pushLongDisplay("Welcome");
 	}
 	public void sendString(String s, String... args)
 	{
@@ -113,11 +113,15 @@ public class ScaleWrapper {
 	public double tara() {
 		sendString("T");
 		try{
-			String[] tokens = new CommandParser(in.readLine()).getTokens();
-			switch(tokens[1]){
+			String feedback = in.readLine();
+			//String[] tokens = new CommandParser(in.readLine()).getTokens();
+			//System.out.println(String.join(",", tokens));
+			String status = feedback.substring(2, 2);
+			switch(status){
 			case "S":{
-				logger.write("Tared successfully, tare value:" + tokens[2] + tokens[3] + "\n");
-				return Double.parseDouble(tokens[2]);
+				String tara = feedback.replaceAll(replacement);
+				logger.write("Tared successfully, tare value:" + tokens[1] + tokens[2] + "\n");
+				return Double.parseDouble(tokens[1]);
 			}
 			case "I":{
 				logger.write("Tare not executed, trying again\n");

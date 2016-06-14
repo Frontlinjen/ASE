@@ -3,6 +3,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import javax.print.attribute.standard.PDLOverrideSupported;
+
 public class Runner implements Runnable{
 
 	private ScaleWrapper scale;
@@ -10,7 +12,10 @@ public class Runner implements Runnable{
 	private Socket socket;
 	private String cpr;
 	private AnsatDTO user;
-	private int pbId;
+
+	ProduktBatchDTO pbDTO;
+	ReceptDTO rbDTO;
+	
 	@Override
 	public void run() {
 		connectToScale();
@@ -52,7 +57,7 @@ public class Runner implements Runnable{
 		MySQLAnsatDAO database = new MySQLAnsatDAO();
 		
 		while(true){
-			cpr = scale.waitForInput("Insert operator ID:", 8, null, null);
+			cpr = scale.waitForInput("Insert operator ID:", 8, "1234567890", null);
 			System.out.println(cpr);
 			String input;
 			try {
@@ -79,12 +84,22 @@ public class Runner implements Runnable{
 		MySQLReceptDAO rcDAO = new MySQLReceptDAO();
 		String input = null;
 		
-		pbId = Integer.parseInt(scale.waitForInput("Product batch number:", 8, null, null));
+		int pbId = Integer.parseInt(scale.waitForInput("Product batch number:", 8, null, null));
 		try{
-			scale.pushLongDisplay(rcDAO.getRecept(pbDAO.getProduktBatch(pbId).getReceptId()).getReceptNavn());
+			pbDTO = pbDAO.getProduktBatch(pbId);
+			rbDTO = rcDAO.getRecept(pbDTO.getReceptId());
+			scale.pushLongDisplay(rbDTO.getReceptNavn());
 		input = scale.waitForInput("Please confirm", 8, "Ok", null);
 		if(input != null){
-			afvejningCore(pbId);
+			try {
+				if(pbDAO.getProduktBatch(pbId).getStatus() == 2){
+					scale.pushLongDisplay("Productbatch in progress");
+				} else {
+					afvejningCore(pbId);
+				}
+			} catch (DALException e1) {
+				e1.printStackTrace();
+			}
 		}
 		else{
 			afvejning();
@@ -101,22 +116,24 @@ public class Runner implements Runnable{
 		MySQLProduktbatchDAO pbDAO = new MySQLProduktbatchDAO();
 		String input = null;
 		
-		try {
-			if(pbDAO.getProduktBatch(produktBatch).getStatus() == 1){
-				scale.pushLongDisplay("Productbatch in progress");
-				return;
-			}
-		} catch (DALException e1) {
-			e1.printStackTrace();
-		}
-		
 		try{
-			List<ReceptKompDTO> list = pbDAO.getRaavareList(Integer.parseInt(input));
+			List<ReceptKompDTO> list = null;
+			do
+			{
+				if(list!=null)
+				{
+					scale.pushLongDisplay("Failed to find raavarelist");
+					System.out.println("Ingen raavarelist..");
+				}
+				list = pbDAO.getRaavareList(pbDTO.getPbId());
+			}while(list.size()==0);
 			for(int i = 0; i < list.size(); i++){
+				System.out.println("test");
 				ProduktBatchKompDTO pbk = new ProduktBatchKompDTO();
+				System.out.println("test2");
 				while(true){
 					input = scale.waitForInput("Clear scale", 8, "Ok", null);
-					if(input == "Ok"){
+					if(input != null){
 						break;
 					}
 					else{
@@ -126,7 +143,7 @@ public class Runner implements Runnable{
 						}
 					}
 				}
-				pbDAO.getProduktBatch(produktBatch).setStatus(1);
+				pbDAO.getProduktBatch(produktBatch).setStatus(2);
 				scale.pushLongDisplay("AutoTara commencing");
 				scale.tara();
 				while(true){
@@ -148,14 +165,15 @@ public class Runner implements Runnable{
 				pbk.setTara(scale.tara() + taraval);
 				pbk.setNetto(scale.getWeight());
 				pbk.setCpr(cpr);
-				pbk.setPbId(pbId);
+				pbk.setPbId(pbDTO.getPbId());
 				pbkDAO.addProduktBatchKomp(pbk);
 			}
-			pbDAO.getProduktBatch(produktBatch).setStatus(2);
+			pbDAO.getProduktBatch(produktBatch).setStatus(3);
 			run(); //Ryk frem til start!
 		}
 		catch(DALException e){
 			scale.pushLongDisplay("Error happened, trying again");
+			e.printStackTrace();
 			afvejningCore(produktBatch);
 		}
 	}
