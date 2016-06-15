@@ -18,7 +18,10 @@ public class Runner implements Runnable{
 	
 	@Override
 	public void run() {
+		System.out.println("Connecting to scale..");
 		connectToScale();
+		System.out.println("Connected!");
+		System.out.println("Starting operator verification..");
 		operatorIdentifier();
 	}
 	
@@ -188,7 +191,8 @@ public class Runner implements Runnable{
 				
 			}
 			try {
-				pbDAO.getProduktBatch(produktBatch).setStatus(3);
+				pbDTO.setStatus(3);
+				pbDAO.updateProduktBatch(pbDTO);
 			} catch (DALException e) {
 				e.printStackTrace();
 			}
