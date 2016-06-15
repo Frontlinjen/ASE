@@ -7,14 +7,16 @@ public class CommandParser {
 	public CommandParser(String s)
 	{
 		StringBuilder trimmedStr = new StringBuilder();
+		s = s + " ";
 		for (int i =1; i < s.length(); i++) {
 			if(!(Character.isWhitespace(s.charAt(i)) && Character.isWhitespace(s.charAt(i-1))))
 			{
 				
-				trimmedStr.append(s.charAt(i));
+				trimmedStr.append(s.charAt(i-1));
 			}
 		}
 		command = trimmedStr.toString();
+
 	}
 	//Todo: make it take double spaces into account
 	public String nextToken()

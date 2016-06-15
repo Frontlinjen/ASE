@@ -36,9 +36,9 @@ public class MySQLProduktBatchKompDAO implements ProduktBatchKompDAO {
 	}
 
 	@Override
-	public int addProduktBatchKomp(ProduktBatchKompDTO pbkomp) throws DALException {
+	public int addProductBatchKomponent(ProduktBatchKompDTO pbkomp) throws DALException {
 		return DatabaseConnector.doUpdate(
-				"CALL addProduktBatchKomp(" + pbkomp.getPbId() + "," + pbkomp.getRaavarebatchId() + "," + pbkomp.getTara() + "," + pbkomp.getNetto() + "," + pbkomp.getCpr() + ");"
+				"CALL addProduktBatchKomponent(" + pbkomp.getPbId() + "," + pbkomp.getRaavarebatchId() + "," + pbkomp.getTara() + "," + pbkomp.getNetto() + "," + pbkomp.getCpr() + ");"
 			);
 	}
 

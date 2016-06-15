@@ -56,23 +56,19 @@ public class DatabaseConnector
 	
 	public static ResultSet doQuery(String cmd) throws DALException
 	{
-		try
-		{
-			if(conn==null)
-			{
-				new DatabaseConnector();
-			}
-		}
-		catch(Exception e)
-		{
-			throw new DALException(e.getMessage());
-		}
+		connector();
 		try { return stm.executeQuery(cmd); }
 		catch (SQLException e) { throw new DALException(e); }
 	}
 	
 	public static int doUpdate(String cmd) throws DALException
 	{
+		connector();
+		try { return stm.executeUpdate(cmd); }
+		catch (SQLException e) { throw new DALException(e); }
+	}
+
+	private static void connector() throws DALException {
 		try
 		{
 			if(conn==null)
@@ -84,8 +80,6 @@ public class DatabaseConnector
 		{
 			throw new DALException(e.getMessage());
 		}
-		try { return stm.executeUpdate(cmd); }
-		catch (SQLException e) { throw new DALException(e); }
 	}
 	
 	
