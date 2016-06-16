@@ -150,7 +150,7 @@ public class Runner implements Runnable{
 				double taraval = scale.tara();
 				while(true)
 				{
-					input = scale.waitForInput("Raavare batch Number:", 8, null, null);
+					input = scale.waitForInput("Raavare " + ingredients.get(i).getRaavareId() + " batch nummer:", 8, null, null);
 					try {
 						rabDTO = rabDAO.getRaavareBatch(Integer.parseInt(input));
 						pbkDTO.setRaavarebatchId(Integer.parseInt(input));
