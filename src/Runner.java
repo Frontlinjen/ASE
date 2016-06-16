@@ -96,11 +96,12 @@ public class Runner implements Runnable{
 						scale.pushLongDisplay("Allerede begyndt");
 						continue;
 					}
-					pbDTO.setStatus(2);
-					pbDAO.updateProduktBatch(pbDTO);
+					
 					scale.pushLongDisplay(rebDTO.getReceptNavn());
 					input = scale.waitForInput("Godkend: " + rebDTO.getReceptNavn(), 8, "Ok", null);
 					if(input != null && input.equals("Ok")){
+						pbDTO.setStatus(2);
+						pbDAO.updateProduktBatch(pbDTO);
 						if(afvejningCore(pbId)==0) // No errors occurred during weight
 						{
 							break;
@@ -191,7 +192,7 @@ public class Runner implements Runnable{
 						pbkDTO.setCpr(cpr);
 						pbkDTO.setPbId(produktBatch);
 						pbkDAO.addProductBatchKomponent(pbkDTO);
-						scale.pushLongDisplay("Produktbatch udfoert");
+						scale.pushLongDisplay("Produktbatchkomponent udfoert");
 						System.out.println("Saved: " + pbkDTO.toString());
 						break;
 					} catch (DALException e1) {
