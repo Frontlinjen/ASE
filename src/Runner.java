@@ -18,10 +18,10 @@ public class Runner implements Runnable{
 	
 	@Override
 	public void run() {
-		System.out.println("Connecting to scale..");
+		System.out.println("Opretter forbindelse...");
 		connectToScale();
-		System.out.println("Connected!");
-		System.out.println("Starting operator verification..");
+		System.out.println("Forbindelse oprettet!");
+		System.out.println("Identificerer bruger...");
 		operatorIdentifier();
 	}
 	
@@ -40,11 +40,11 @@ public class Runner implements Runnable{
 				try {
 					Thread.sleep(2000);
 				} catch (InterruptedException e1) {
-					System.out.println("Timed out too early.");
+					System.out.println("For tidlig Time Out");
 				}
 			}catch (IOException e) 
 			{
-				System.out.println("Failed to create socket: " + e.getMessage());
+				System.out.println("Kunne IKKE oprette socket: " + e.getMessage());
 			}
 		}while(socket==null);
 		try {
@@ -57,13 +57,18 @@ public class Runner implements Runnable{
 	private void operatorIdentifier(){ //punkt 1-4
 		AnsatDAO database = new MySQLAnsatDAO();
 		while(true){
-			cpr = scale.waitForInput("Insert operator ID:", 8, "0003030303", null);
-			System.out.println("The weight has been taken in command by "  + cpr);
+			cpr = scale.waitForInput("Angiv operator ID:", 8, null, null);
+			System.out.println("Vaegten bliver brugt af "  + cpr);
 			
 			try {
 				user = database.getAnsat(cpr);
+				if(user.getTitel()<0)
+				{
+					scale.pushLongDisplay("Du er ikke ansat");
+					continue;
+				}
 			} catch (DALException e1) {
-				scale.pushLongDisplay("User not found");
+				scale.pushLongDisplay("Kunne IKKE finde bruger");
 				continue;
 			}
 			String input;
@@ -84,11 +89,17 @@ public class Runner implements Runnable{
 			while(true)
 			{
 				try{
-					pbId = Integer.parseInt(scale.waitForInput("Product batch number:", 8, null, null));
+					pbId = Integer.parseInt(scale.waitForInput("Productbatchnummer:", 8, null, null));
 					pbDTO = pbDAO.getProduktBatch(pbId);
 					rebDTO = rcDAO.getRecept(pbDTO.getReceptId());
+					if(pbDTO.getStatus() == 2){
+						scale.pushLongDisplay("Allerede begyndt");
+						continue;
+					}
+					pbDTO.setStatus(2);
+					pbDAO.updateProduktBatch(pbDTO);
 					scale.pushLongDisplay(rebDTO.getReceptNavn());
-					input = scale.waitForInput("Please confirm", 8, "Ok", null);
+					input = scale.waitForInput("Godkend: " + rebDTO.getReceptNavn(), 8, "Ok", null);
 					if(input != null && input.equals("Ok")){
 						if(afvejningCore(pbId)==0) // No errors occurred during weight
 						{
@@ -98,10 +109,10 @@ public class Runner implements Runnable{
 				}
 				
 				catch(DALException e){
-					scale.pushLongDisplay("Recept not found");
+					scale.pushLongDisplay("Kunne IKKE finde recept");
 				}
 				catch(NumberFormatException e){
-					scale.pushLongDisplay("Only numbers accepted");
+					scale.pushLongDisplay("Accepterer kun tal");
 				}
 				scale.pushLongDisplay("Indtast produktnummer igen.");
 			}
@@ -125,8 +136,8 @@ public class Runner implements Runnable{
 		
 				if(ingredients==null)
 				{
-					scale.waitForConfirmation("Failed to find raavarelist");
-					System.out.println("Ingen raavarelist for produktBatch: " + produktBatch);
+					scale.waitForConfirmation("Raavareliste IKKE fundet");
+					System.out.println("Ingen raavareliste for produktBatch: " + produktBatch);
 					try {
 						Thread.sleep(2000);
 					} catch (InterruptedException e) {
@@ -138,27 +149,27 @@ public class Runner implements Runnable{
 				ProduktBatchKompDTO pbkDTO = new ProduktBatchKompDTO();
 				scale.waitForConfirmation("Ryd vaegten");
 				try {
-					pbDTO.setStatus(2);
 					pbDAO.updateProduktBatch(pbDTO);
 				} catch (DALException e) {
 					System.out.println(e.getMessage());
 				}
-				scale.pushLongDisplay("AutoTara commencing");
+				scale.pushLongDisplay("AutoTara begynder...");
 				scale.tara();
-				scale.waitForConfirmation("Stil beholder på vaegten");
-				scale.pushLongDisplay("AutoTara commencing");
+				scale.waitForConfirmation("Stil beholder paa vaegt");
+				scale.pushLongDisplay("AutoTara begynder...");
 				double taraval = scale.tara();
 				while(true)
 				{
-					input = scale.waitForInput("Raavare " + ingredients.get(i).getRaavareId() + " batch nummer:", 8, null, null);
+					scale.pushLongDisplay("Tast batchnr for raavareID:");
+					input = scale.waitForInput("Raavare " + Integer.toString(ingredients.get(i).getRaavareId()), 8, null, null);
 					try {
 						rabDTO = rabDAO.getRaavareBatch(Integer.parseInt(input));
 						pbkDTO.setRaavarebatchId(Integer.parseInt(input));
 						break;
 					} catch (NumberFormatException e1) {
-						scale.pushLongDisplay("Indtast et tal");
+						scale.pushLongDisplay("Accepterer kun tal");
 					} catch (DALException e1) {
-						scale.pushLongDisplay("Resource batch not found.");
+						scale.pushLongDisplay("Raavarebatch IKKE fundet");
 					}
 				}
 				while(true)
@@ -180,11 +191,11 @@ public class Runner implements Runnable{
 						pbkDTO.setCpr(cpr);
 						pbkDTO.setPbId(produktBatch);
 						pbkDAO.addProductBatchKomponent(pbkDTO);
-						scale.pushLongDisplay("Produktbatch udført");
+						scale.pushLongDisplay("Produktbatch udfoert");
 						System.out.println("Saved: " + pbkDTO.toString());
 						break;
 					} catch (DALException e1) {
-						scale.pushLongDisplay("Kunne ikke gemme afvejningen.");
+						scale.pushLongDisplay("Afvejning IKKE gemt");
 					}
 				}
 				
@@ -193,9 +204,11 @@ public class Runner implements Runnable{
 			try {
 				pbDTO.setStatus(3);
 				pbDAO.updateProduktBatch(pbDTO);
+				
 			} catch (DALException e) {
 				e.printStackTrace();
+				scale.pushLongDisplay("Status IKKE opdateret");
 			}
-			return 0;
+			return 0; //Done
 	}
 }
